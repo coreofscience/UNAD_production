@@ -68,8 +68,9 @@ articulos <- grupo_df |> filter(categoria == "Artículos") |>
   mutate(DOI = str_extract(producto, "DOI.*")) |> 
   filter(!is.na(DOI)) |> 
   mutate(DOI = str_remove(DOI, ".*DOI:"),
-         DOI = str_trim(DOI)) |> 
-  filter(DOI != "")
+         DOI = str_trim(DOI)) |>
+  mutate(DOI = str_trim(DOI))
+articulos <- articulos |>  mutate(id = c(1:nrow(articulos)))
 
 library(tidyverse)
 library(here)
@@ -94,7 +95,7 @@ library(XML)
 library(plyr)
 library(sjrdata)
 library(journalabbr)
-
+library(gdata)
 
 
 references <- data.frame(DI = character(), 
@@ -112,9 +113,11 @@ authors <- data.frame(doi = character(),
                       year = character(), 
                       month = character(), 
                       stringsAsFactors = FALSE)
-
+j=1
 for (i in articulos$DOI) {
-  for(j in articulos$grupo){
+  print(i)
+    nuevo <- articulos$id[j]
+    j=j+1
     doi <- i
     url <- paste0("http://api.crossref.org/works/", doi, ".xml")
     xml_data_1 = try(xmlParse(url), silent = TRUE);
@@ -256,12 +259,25 @@ for (i in articulos$DOI) {
             AF <- as.character(paste(authorss$author, collapse = ";   "))
           }
           
-          references0 <- data.frame(DI = doi, PU = PU, SO = SO, J9 = J9, PD = PD, PY = PY, TI = TI, AF = AF, Autor=j)
+          references0 <- data.frame(DI = doi, PU = PU, SO = SO, J9 = J9, PD = PD, PY = PY, TI = TI, AF = AF, Autor=nuevo)
           references = rbind(references, references0) 
           
         }else {
           next}
       }
     }
-  }
 } 
+
+
+
+#Unir datos con los originales
+
+graph_UNAD <- articulos |> 
+  left_join(references, by = c("id"="Autor")) |> 
+  select(grupo, PU, id)
+
+
+
+grafo <- graph_UNAD
+write.xlsx(graph_UNAD, "graph.xlsx")
+
