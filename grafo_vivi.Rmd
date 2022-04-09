@@ -105,3 +105,40 @@ visNetwork(nodes = nodes,
   visInteraction(navigationButtons = TRUE, multiselect = TRUE)
 ```
 
+```{r}
+datos_vivi_2 <- 
+  read_csv("Investigadores.csv") |> 
+  select(Source = ciudad,
+         Target = institution)
+```
+```{r}
+datos_vivi_2_graph <- 
+  datos_vivi_2 |> 
+  graph_from_data_frame(directed = TRUE) |> 
+  as_tbl_graph() |> 
+  activate(nodes) |> 
+  mutate(color = if_else(name %in% datos_vivi_2$Target,
+                         "orange", "blue"))
+
+nodes <- 
+  datos_vivi_2_graph |> 
+  activate(nodes) |>
+  mutate(id = row_number()) |> 
+  data.frame() |> 
+  rename(label = name) 
+  # rename(label = name) 
+
+edges <- 
+  datos_vivi_2_graph |> 
+  activate(edges) |>
+  as_tibble() 
+
+visNetwork(nodes = nodes, 
+           edges = edges, 
+           height = "500px") |>
+  visIgraphLayout(layout = "layout_with_fr") |> 
+  visOptions(highlightNearest = TRUE, selectedBy = "label" ) |> 
+  visInteraction(navigationButtons = TRUE, multiselect = TRUE)
+
+```
+
