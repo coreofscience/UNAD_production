@@ -1,0 +1,107 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(tidygraph)
+library(igraph)
+library(visNetwork)
+```
+
+# Getting data
+
+```{r, echo=FALSE}
+datos_vivi <-
+  read_csv("Investigadores.csv") |>
+  select(Source = Investigador,
+         Target = institution) |>
+  group_by(Source, Target) |>
+  count() |>
+  rename(weight = n) |>
+  unique()
+```
+Enlaces 
+
+```{r, echo=FALSE}
+# datos_vivi_graph <- 
+#   datos_vivi |> 
+#   graph_from_data_frame(d = datos_vivi, 
+#                         directed = FALSE)
+```
+
+```{r, echo=FALSE}
+# data_fake <- 
+#   tibble(Source = c("a", "b", "c", "a"),
+#          Target = c("d", "e", "f", "d")) |> 
+#   graph.data.frame(directed = TRUE)
+
+
+```
+
+
+
+```{r, echo=FALSE}
+# write_csv(datos_vivi, "datos_vivi.csv")
+```
+
+```{r, echo=FALSE}
+vivi_graph <-
+  read_graph("vivi_graph.graphml",
+             "graphml") |>
+  as_tbl_graph()
+# 
+institutions <-
+  datos_vivi |>
+  ungroup() |>
+  select(Target) |>
+  unique()
+# 
+# vivi_graph_1 <- 
+#   vivi_graph |> 
+#   activate(nodes) |> 
+#   rename(id_graph = id) |> 
+#   mutate(color = if_else(id_graph %in% institutions$Target,
+#          "orange", "blue"), 
+#          nombre = if_else(id_graph %in% institutions$Target,
+#          id_graph, 
+#          ""))
+# 
+# 
+# vivi_graph_1 |> 
+#   activate(nodes) |> 
+#   as_tibble() |> View()
+# 
+# write_graph(vivi_graph_1, 
+#             "vivi_graph_1.graphml",
+#             "graphml")
+```
+
+Visualización 
+
+```{r}
+nodes <- 
+  vivi_graph |> 
+  activate(nodes) |>
+  mutate(id = row_number()) |> 
+  data.frame() |> 
+  select(-label) |> 
+  rename(label = nombre) |> 
+  mutate(color = if_else(label == "", "blue", "orange"))
+  # rename(label = name) 
+
+edges <- 
+  vivi_graph |> 
+  activate(edges) |>
+  as_tibble() |> 
+  select(from, to) 
+
+visNetwork(nodes = nodes, 
+           edges = edges, 
+           height = "500px") |>
+  visIgraphLayout(layout = "layout_with_fr") |> 
+  visOptions(highlightNearest = TRUE, selectedBy = "nombre" ) |> 
+  visInteraction(navigationButtons = TRUE, multiselect = TRUE)
+```
+
